@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OUSL BSE Honours – Credit Calculator</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,700;1,300&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <div class="logo">OUSL <span>BSE·Calc</span></div>
+    <div class="subtitle">Bachelor of Software Engineering Honours</div>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export</button>
+      <button class="btn btn-ghost btn-sm btn-danger" onclick="clearAll()">✕ Clear</button>
+    </div>
+  </header>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('courses',this)">📋 Courses</button>
+    <button class="tab" onclick="switchTab('requirements',this)">🎓 Requirements</button>
+    <button class="tab" onclick="switchTab('gpa',this)">📊 GPA Details</button>
+    <button class="tab" onclick="switchTab('compare',this)">⇄ RC vs RC'25</button>
+  </div>
+  <div class="main">
+    <div class="content-area">
+      <!-- COURSES TAB -->
+      <div id="tab-courses" class="tab-panel active">
+        <div class="mode-toggle">
+          <button class="mode-btn" id="btn-RC" onclick="setMode('RC')">RC</button>
+          <button class="mode-btn active" id="btn-RC25" onclick="setMode('RC25')">RC'25</button>
+          <button class="mode-btn" id="btn-RC25V" onclick="setMode('RC25V')">RC'25 Virtual</button>
+        </div>
+        <div class="upload-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFile(event)">
+          <div class="upload-icon">📂</div>
+          <h3>Upload your progress spreadsheet</h3>
+          <p>Drag &amp; drop Excel / CSV, or click to browse</p>
+          <span class="format-hint">Course Code · Course Name · Last Offered Year · Progress Status · Grade · Attempts ·
+            Eligibility Completed Years · Eligibility Left</span>
+        </div>
+        <details style="margin-bottom:14px">
+          <summary style="cursor:pointer;font-size:12px;color:var(--text2);padding:5px 0;user-select:none">＋ Add course
+            manually</summary>
+          <div class="add-row" style="margin-top:9px">
+            <div class="ff"><label>Code</label><input id="m-code" placeholder="EEI5467" maxlength="10"></div>
+            <div class="ff"><label>Course Name</label><input id="m-name" placeholder="(auto from code)"></div>
+            <div class="ff"><label>Status</label>
+              <select id="m-status">
+                <option value="">—</option>
+                <option>Pass</option>
+                <option>CA Pass</option>
+                <option>Fail</option>
+                <option>Absent</option>
+                <option>Ongoing</option>
+                <option>Pending</option>
+                <option>Resit</option>
+                <option>Repeat</option>
+              </select>
+            </div>
+            <div class="ff"><label>Grade</label>
+              <select id="m-grade">
+                <option value="">—</option>
+                <option>A+</option>
+                <option>A</option>
+                <option>A-</option>
+                <option>B+</option>
+                <option>B</option>
+                <option>B-</option>
+                <option>C+</option>
+                <option>C</option>
+                <option>C-</option>
+                <option>D+</option>
+                <option>D</option>
+                <option>E</option>
+              </select>
+            </div>
+            <div class="ff"><label>Attempts</label><input id="m-att" type="number" placeholder="1" min="1"></div>
+            <div class="ff" style="justify-content:flex-end"><button class="btn btn-primary" style="width:100%"
+                onclick="addManual()">Add</button></div>
+          </div>
+        </details>
+        <div class="stats-row">
+          <div class="stat-chip">
+            <div class="sv" id="cnt-reg" style="color:var(--accent)">0</div>
+            <div class="sl">Registered</div>
+          </div>
+          <div class="stat-chip">
+            <div class="sv" id="cnt-pass" style="color:var(--pass)">0</div>
+            <div class="sl">Pass / CA</div>
+          </div>
+          <div class="stat-chip">
+            <div class="sv" id="cnt-resit" style="color:var(--accent2)">0</div>
+            <div class="sl">Resit</div>
+          </div>
+          <div class="stat-chip">
+            <div class="sv" id="cnt-pend" style="color:var(--warn)">0</div>
+            <div class="sl">Pending</div>
+          </div>
+          <div class="stat-chip">
+            <div class="sv" id="cnt-rep" style="color:var(--fail)">0</div>
+            <div class="sl">Repeat/Fail</div>
+          </div>
+        </div>
+        <div class="section-head">
+          <h2>Course List</h2>
+          <span class="badge" id="course-count">0 courses</span>
+          <span class="badge" id="mode-label" style="color:var(--accent2)">RC'25</span>
+        </div>
+        <div class="table-wrap" id="courseTableWrap">
+          <div class="empty-state">
+            <div class="ei">📋</div>
+            <h3>No courses loaded</h3>
+            <p>Upload a spreadsheet or add courses manually</p>
+          </div>
+        </div>
+      </div>
+      <!-- REQUIREMENTS TAB -->
+      <div id="tab-requirements" class="tab-panel">
+        <div id="req-body">
+          <div class="empty-state">
+            <div class="ei">🎓</div>
+            <h3>Load your courses first</h3>
+            <p>Upload progress to see requirements.</p>
+          </div>
+        </div>
+      </div>
+      <!-- GPA TAB -->
+      <div id="tab-gpa" class="tab-panel">
+        <div id="gpa-body">
+          <div class="empty-state">
+            <div class="ei">📊</div>
+            <h3>Load your courses first</h3>
+            <p>GPA breakdown will appear here.</p>
+          </div>
+        </div>
+      </div>
+      <!-- COMPARE TAB -->
+      <div id="tab-compare" class="tab-panel">
+        <div class="section-head">
+          <h2>RC vs RC'25 Course Mapping</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>RC Code</th>
+                <th>RC Course</th>
+                <th>Cr</th>
+                <th>RC'25 Code</th>
+                <th>RC'25 Course</th>
+                <th>Cr</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody id="compare-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="gpa-box">
+        <div class="gpa-num" id="sb-gpa">—</div>
+        <div class="gpa-lbl">GPA <span id="sb-gpa-mode" style="color:var(--accent2)"></span></div>
+        <div class="gpa-note" id="sb-gpa-note">L4–L6, best 70 credits</div>
+      </div>
+      <div class="slabel">Credit Progress</div>
+      <div class="card">
+        <div class="card-row"><span class="card-title">Total Passed</span><span class="card-value"
+            id="sb-total">0</span></div>
+        <div class="card-sub" id="sb-total-req">Required: 125 credits</div>
+        <div class="ptrack">
+          <div class="pfill" id="pb-total" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-row"><span class="card-title">L5 + L6 Credits</span><span class="card-value"
+            id="sb-l56">0</span></div>
+        <div class="card-sub" id="sb-l56-req">Min: 63 credits</div>
+        <div class="ptrack">
+          <div class="pfill" id="pb-l56" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-row"><span class="card-title">Level 6 Credits</span><span class="card-value"
+            id="sb-l6">0</span></div>
+        <div class="card-sub">Min: 30 credits</div>
+        <div class="ptrack">
+          <div class="pfill" id="pb-l6" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="slabel">By Level (passed)</div>
+      <div class="lv-grid">
+        <div class="lv-card">
+          <div class="lv-num">Level 3</div>
+          <div class="lv-cr" id="lv3">0</div>
+        </div>
+        <div class="lv-card">
+          <div class="lv-num">Level 4</div>
+          <div class="lv-cr" id="lv4">0</div>
+        </div>
+        <div class="lv-card">
+          <div class="lv-num">Level 5</div>
+          <div class="lv-cr" id="lv5">0</div>
+        </div>
+        <div class="lv-card">
+          <div class="lv-num">Level 6</div>
+          <div class="lv-cr" id="lv6">0</div>
+        </div>
+      </div>
+      <div class="slabel">By Category</div>
+      <div class="card">
+        <div id="cat-breakdown">
+          <div style="color:var(--text3);font-size:10px;text-align:center;padding:7px">No data yet</div>
+        </div>
+      </div>
+      <div class="slabel">Eligibility Alerts</div>
+      <div id="alert-panel">
+        <div style="color:var(--text3);font-size:10px">Load courses to see alerts.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
